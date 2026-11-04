@@ -4,7 +4,7 @@ Home Assistant add-on repository for [Jam-Dash](https://github.com/Starkkaman/ja
 
 | Add-on | What it does |
 | --- | --- |
-| [Jam-Dash](jam-dash/) | Opens your Jam-Dash (running anywhere on your network) in the Home Assistant sidebar via ingress, so it works wherever Home Assistant works, including the companion app and remote access. |
+| [Jam-Dash](jam-dash/) | Opens one or more Jam-Dash servers (running anywhere on your network) from one Home Assistant sidebar entry via ingress, so it works wherever Home Assistant works, including the companion app and remote access. |
 
 ## Install
 

@@ -1,7 +1,7 @@
 name: Jam-Dash
-version: "0.1.0"
+version: "0.2.0"
 slug: jam_dash
-description: Open your Jam-Dash home-server dashboard inside Home Assistant.
+description: Open your Jam-Dash home-server dashboards inside Home Assistant.
 url: https://github.com/Starkkaman/jam-dash-ha
 arch:
   - aarch64
@@ -16,8 +16,12 @@ panel_icon: mdi:view-dashboard-variant
 panel_title: Jam-Dash
 panel_admin: true
 options:
-  url: "http://jam-dash.local:8484"
-  proxy_key: ""
+  servers: []
 schema:
-  url: url
-  proxy_key: password
+  servers:
+    - name: str
+      url: url
+      proxy_key: password
+  # Pre-0.2.0 single-server options; used only when `servers` is empty.
+  url: url?
+  proxy_key: password?

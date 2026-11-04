@@ -1,11 +1,30 @@
 configuration:
+  servers:
+    name: Jam-Dash servers
+    description: >-
+      One entry per Jam-Dash you want to open from Home Assistant. With more than one,
+      the sidebar entry opens a page where you pick a server. At least one is required.
+    fields:
+      name:
+        name: Name
+        description: >-
+          Shown to people on the server picker, for example "smol-boi" or "TrueNAS".
+          It also sets the server's path (s/<name>/), so keep it stable.
+      url:
+        name: Address
+        description: >-
+          Where this Jam-Dash runs, with scheme and port only (no path), for example
+          http://192.168.1.20:8484 or http://jam-dash.local:8484.
+      proxy_key:
+        name: Proxy key
+        description: >-
+          The key shown once in this Jam-Dash under Settings › Home Assistant access.
+          Each server has its own key.
   url:
-    name: Jam-Dash address
+    name: Jam-Dash address (old, single server)
     description: >-
-      Where Jam-Dash runs on your network, with scheme and port only
-      (no path), for example http://192.168.1.20:8484 or http://jam-dash.local:8484.
+      Kept from version 0.1. Used only when the server list is empty. Prefer adding a server above.
   proxy_key:
-    name: Proxy key
+    name: Proxy key (old, single server)
     description: >-
-      The key shown once in Jam-Dash under Settings › Home Assistant access.
-      Jam-Dash only trusts the Home Assistant sign-in when this key matches.
+      Kept from version 0.1. Used only when the server list is empty.

@@ -1,4 +1,4 @@
-# Rendered by render.sh at start-up. Placeholders: @RUN_DIR@ @RESOLVER@ @UPSTREAM@ @KEY_FILE@
+# Rendered by render.sh at start-up. Placeholders: @RUN_DIR@ @RESOLVER@ @WWW_DIR@
 worker_processes 1;
 pid @RUN_DIR@/nginx.pid;
 error_log /dev/stderr warn;
@@ -9,7 +9,7 @@ events {
 }
 
 http {
-    # Never log request headers: the proxy key lives in one, and this format has none of them.
+    # Never log request headers: the proxy keys live in one, and this format has none of them.
     log_format jam_dash '$remote_addr user="$http_x_remote_user_name" "$request_method $uri" '
                         '$status $body_bytes_sent ${request_time}s';
     access_log /dev/stdout jam_dash;
@@ -21,7 +21,7 @@ http {
     uwsgi_temp_path       @RUN_DIR@/uwsgi;
     scgi_temp_path        @RUN_DIR@/scgi;
 
-    # Resolve the Jam-Dash host lazily, so the add-on starts even when Jam-Dash is down.
+    # Resolve Jam-Dash hosts lazily, so the add-on starts even when a server is down.
     resolver @RESOLVER@ valid=30s;
     resolver_timeout 5s;
 
@@ -41,6 +41,7 @@ http {
         allow 172.30.32.2;
         deny  all;
 
+        absolute_redirect off;
         client_max_body_size 0;
         proxy_http_version 1.1;
         proxy_buffering off;
@@ -52,22 +53,21 @@ http {
         send_timeout 3600s;
         proxy_ssl_server_name on;
 
-        location / {
-            set $jd_upstream "@UPSTREAM@";
-            proxy_pass $jd_upstream;
+        # Landing page (or a redirect when there is only one server).
+        include @RUN_DIR@/root.conf;
 
-            proxy_set_header Host $proxy_host;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $jd_connection;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $jd_proto;
-            proxy_set_header X-Forwarded-Prefix $http_x_ingress_path;
-            # Passed as received from the Supervisor; empty values are not sent.
-            proxy_set_header X-Remote-User-Id $http_x_remote_user_id;
-            proxy_set_header X-Remote-User-Name $http_x_remote_user_name;
-            proxy_set_header X-Remote-User-Display-Name $http_x_remote_user_display_name;
-            # Sets X-Jam-Dash-Proxy (replacing anything a client sent).
-            include @KEY_FILE@;
+        # Names and paths only; never upstream URLs or keys.
+        location = /servers.json {
+            root @WWW_DIR@;
+            default_type application/json;
+            add_header Cache-Control "no-store" always;
         }
+
+        location / {
+            return 404;
+        }
+
+        # One block per server: /s/<slug>/...
+        include @RUN_DIR@/servers.conf;
     }
 }

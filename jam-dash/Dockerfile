@@ -1,12 +1,12 @@
 # Pinned multi-arch Home Assistant base image (Alpine 3.24, s6-overlay v3, bashio).
 FROM ghcr.io/home-assistant/base:3.24-2026.10.3
 
-ARG BUILD_VERSION=0.1.0
+ARG BUILD_VERSION=0.2.0
 
-RUN apk add --no-cache nginx \
+RUN apk add --no-cache nginx jq \
     && mkdir -p /run/nginx /var/lib/nginx/tmp
 
-COPY nginx.conf.tmpl render.sh run.sh /opt/jam-dash/
+COPY nginx.conf.tmpl location.conf.tmpl index.html render.sh run.sh /opt/jam-dash/
 RUN chmod a+x /opt/jam-dash/render.sh /opt/jam-dash/run.sh
 
 LABEL \
