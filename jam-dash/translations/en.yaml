@@ -8,7 +8,7 @@ configuration:
       name:
         name: Name
         description: >-
-          Shown to people on the server picker, for example "smol-boi" or "TrueNAS".
+          Shown to people on the server picker, for example "home-server" or "TrueNAS".
           It also sets the server's path (s/<name>/), so keep it stable.
       url:
         name: Address

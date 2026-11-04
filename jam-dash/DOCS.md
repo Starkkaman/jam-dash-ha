@@ -1,7 +1,7 @@
 # Jam-Dash
 
 This add-on puts your Jam-Dash dashboards in the Home Assistant sidebar, one or several of them (for
-example "smol-boi" and "TrueNAS") behind a single sidebar entry. Each Jam-Dash keeps running where it
+example "home-server" and "TrueNAS") behind a single sidebar entry. Each Jam-Dash keeps running where it
 already runs (another machine, NAS, container); the add-on is a small nginx proxy that forwards Home
 Assistant ingress to it. Anywhere you can open Home Assistant, at home, through Nabu Casa or your own
 remote access, or in the companion app, you can open your Jam-Dash servers.
@@ -13,7 +13,7 @@ remote access, or in the companion app, you can open your Jam-Dash servers.
    own key.
 2. **In Home Assistant:** open this add-on's **Configuration** tab and add one entry per server under
    **servers**:
-   - **name**: what people see, for example `smol-boi` or `TrueNAS`.
+   - **name**: what people see, for example `home-server` or `TrueNAS`.
    - **url**: where that Jam-Dash runs, scheme, host and port only, for example
      `http://192.168.1.20:8484` or `http://jam-dash.local:8484`. No path.
    - **proxy_key**: the key you copied from that server.
@@ -22,9 +22,9 @@ remote access, or in the companion app, you can open your Jam-Dash servers.
 
    ```yaml
    servers:
-     - name: smol-boi
+     - name: home-server
        url: http://192.168.1.20:8484
-       proxy_key: "<key from smol-boi>"
+       proxy_key: "<key from home-server>"
      - name: TrueNAS
        url: http://truenas.local:8484
        proxy_key: "<key from TrueNAS>"
@@ -37,7 +37,7 @@ remote access, or in the companion app, you can open your Jam-Dash servers.
 ### Server paths
 
 Each server lives under its own path inside the add-on: `s/<slug>/`. The slug comes from the name:
-lowercase, letters, digits and `-` only (`TrueNAS` becomes `truenas`, `smol boi` becomes `smol-boi`).
+lowercase, letters, digits and `-` only (`TrueNAS` becomes `truenas`, `home server` becomes `home-server`).
 If two names give the same slug, later ones get `-2`, `-3` and so on, in list order. Renaming a server
 changes its path, so bookmarks to the old path stop working.
 
@@ -67,7 +67,7 @@ with that server's proxy key. Jam-Dash signs the request in as that Home Assista
   its normal sign-in. Jam-Dash stores the key hashed, compares it in constant time and never logs it.
   The add-on stores it as a password option, keeps it in a file only root can read and never writes it to
   its log. A client cannot smuggle its own key: the add-on always replaces that header.
-- **Each server only gets its own key.** smol-boi never sees TrueNAS's key, so one compromised server
+- **Each server only gets its own key.** home-server never sees TrueNAS's key, so one compromised server
   cannot sign in to another. The landing page and `servers.json` show names only, never addresses or keys.
 - **Turning it off is instant.** In Jam-Dash, turn **Home Assistant access** off (deletes the key) or
   press **New key** (the old one stops working immediately).

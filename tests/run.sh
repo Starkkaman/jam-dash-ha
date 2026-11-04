@@ -30,7 +30,7 @@ refused() { # <label> <expected message part> <list> <legacy_url> <legacy_key>
     else bad "$1: unexpected message: $(cat "$work/render.log")"; fi
 }
 nokeys() { # <file> <label>
-    if grep -qE "$KEY1|$KEY2|$KEY3|127\.0\.0\.1|smol\.lan|truenas\.lan" "$1"; then bad "$2 leaks a key or upstream"; else ok "$2 has no keys or upstreams"; fi
+    if grep -qE "$KEY1|$KEY2|$KEY3|127\.0\.0\.1|home\.lan|truenas\.lan" "$1"; then bad "$2 leaks a key or upstream"; else ok "$2 has no keys or upstreams"; fi
 }
 
 # 1. Refuses to start on missing / malformed options, with a clear message.
@@ -51,36 +51,36 @@ if render "$work/clash" "" "" "$work/c"; then
     [ "$(cat "$work/c/www/servers.json")" = '[{"name":"TrueNAS","slug":"truenas","path":"s/truenas/"},{"name":"truenas!","slug":"truenas-2","path":"s/truenas-2/"},{"name":"True NAS","slug":"true-nas","path":"s/true-nas/"},{"name":"***","slug":"server","path":"s/server/"}]' ] \
         && ok "slugs and clashes" || bad "slugs: $(cat "$work/c/www/servers.json")"
 else bad "clash render: $(cat "$work/render.log")"; fi
-servers "$work/q" 'Say "hi" \ there' "http://h:1" "$KEY1" "Smol-Boi" "http://h:2" "$KEY2"
-render "$work/q" "" "" "$work/q2" && node -e 'const s=JSON.parse(require("fs").readFileSync(process.argv[1]));if(s[0].name!=="Say \"hi\" \\ there"||s[1].slug!=="smol-boi")process.exit(1)' "$work/q2/www/servers.json" 2>/dev/null \
+servers "$work/q" 'Say "hi" \ there' "http://h:1" "$KEY1" "Home-Server" "http://h:2" "$KEY2"
+render "$work/q" "" "" "$work/q2" && node -e 'const s=JSON.parse(require("fs").readFileSync(process.argv[1]));if(s[0].name!=="Say \"hi\" \\ there"||s[1].slug!=="home-server")process.exit(1)' "$work/q2/www/servers.json" 2>/dev/null \
     && ok "servers.json is valid JSON with escaped names" || bad "servers.json escaping: $(cat "$work/q2/www/servers.json")"
 
 # 3. Two-server render.
-servers "$work/two" "smol-boi" "http://127.0.0.1:$P1/" "$KEY1" "TrueNAS" "http://127.0.0.1:$P2" "$KEY2"
+servers "$work/two" "home-server" "http://127.0.0.1:$P1/" "$KEY1" "TrueNAS" "http://127.0.0.1:$P2" "$KEY2"
 if render "$work/two" "" "" "$work/two-out"; then ok "two servers rendered"; else bad "render failed"; cat "$work/render.log"; exit 1; fi
 o="$work/two-out"; conf="$o/nginx.conf"
 grep -qE "$KEY1|$KEY2" "$work/render.log" && bad "key printed by render" || ok "keys not printed (the log shows names and addresses only)"
 nokeys "$o/www/servers.json" "servers.json"
 grep -qE "$KEY1|$KEY2" "$conf" "$o/servers.conf" "$o/root.conf" && bad "key inlined in nginx config" || ok "keys only in include files"
-[ "$(stat -c %a "$o/keys/smol-boi.conf")" = 600 ] && [ "$(stat -c %a "$o/keys/truenas.conf")" = 600 ] && ok "key files mode 600" || bad "key file mode"
-grep -qF "$KEY1" "$o/keys/smol-boi.conf" && grep -qF "$KEY2" "$o/keys/truenas.conf" && ok "one key per server" || bad "key files"
+[ "$(stat -c %a "$o/keys/home-server.conf")" = 600 ] && [ "$(stat -c %a "$o/keys/truenas.conf")" = 600 ] && ok "key files mode 600" || bad "key file mode"
+grep -qF "$KEY1" "$o/keys/home-server.conf" && grep -qF "$KEY2" "$o/keys/truenas.conf" && ok "one key per server" || bad "key files"
 grep -q '@[A-Z_]*@' "$conf" "$o/servers.conf" && bad "unrendered placeholder" || ok "no placeholders left"
 grep -q 'try_files /index.html' "$o/root.conf" && ok "2 servers: root serves the landing page" || bad "2 servers: root.conf"
 for want in 'listen 8099' 'allow 172.30.32.2;' 'deny  all;' 'client_max_body_size 0;' 'proxy_buffering off;'; do
     grep -qF "$want" "$conf" && ok "has: $want" || bad "missing: $want"
 done
-for want in 'location /s/smol-boi/' 'location /s/truenas/' 'X-Forwarded-Prefix "$http_x_ingress_path/s/truenas"' \
+for want in 'location /s/home-server/' 'location /s/truenas/' 'X-Forwarded-Prefix "$http_x_ingress_path/s/truenas"' \
             'Upgrade $http_upgrade' "set \$jd_upstream \"http://127.0.0.1:$P1\";"; do
     grep -qF "$want" "$o/servers.conf" && ok "has: $want" || bad "missing: $want"
 done
-for s in smol-boi truenas; do
+for s in home-server truenas; do
     grep -qF "proxy_cookie_path ~^/\$ \"\$http_x_ingress_path/s/$s/\";" "$o/servers.conf" && ok "cookie path rewrite for $s" || bad "no cookie path rewrite for $s"
 done
 sed -n '/log_format/,/;/p' "$conf" | grep -qi 'jam_dash_proxy' && bad "log_format logs the key header" || ok "log_format has no key header"
 
 # 4. One server: root redirects; legacy options become one server "Jam-Dash".
-servers "$work/one" "smol-boi" "http://127.0.0.1:$P1" "$KEY1"
-render "$work/one" "" "" "$work/one-out" && grep -qF 'return 302 $http_x_ingress_path/s/smol-boi/;' "$work/one-out/root.conf" \
+servers "$work/one" "home-server" "http://127.0.0.1:$P1" "$KEY1"
+render "$work/one" "" "" "$work/one-out" && grep -qF 'return 302 $http_x_ingress_path/s/home-server/;' "$work/one-out/root.conf" \
     && ok "1 server: root redirects to it" || bad "1 server: root.conf"
 if render "$work/empty" "http://127.0.0.1:$P1" "$KEY1" "$work/legacy-out"; then
     [ "$(cat "$work/legacy-out/www/servers.json")" = '[{"name":"Jam-Dash","slug":"jam-dash","path":"s/jam-dash/"}]' ] \
@@ -136,10 +136,10 @@ check '"x-remote-user-display-name":"Alice A"' truenas
 check "\"host\":\"127.0.0.1:$P2\"" truenas
 check '"x-forwarded-proto":"http"' truenas
 echo "$body" | grep -q forged && bad "client-sent key passed through" || ok "client-sent key replaced"
-body=$(curl -s -H "$IP" "$U/s/smol-boi/")
-check "\"port\":$P1" smol-boi; check '"url":"/"' smol-boi; check "\"x-jam-dash-proxy\":\"$KEY1\"" smol-boi
-body=$(curl -s -H "$IP" -H 'Connection: Upgrade' -H 'Upgrade: websocket' "$U/s/smol-boi/ws")
-check '"upgrade":"websocket"' smol-boi-ws; check '"connection":"upgrade"' smol-boi-ws
+body=$(curl -s -H "$IP" "$U/s/home-server/")
+check "\"port\":$P1" home-server; check '"url":"/"' home-server; check "\"x-jam-dash-proxy\":\"$KEY1\"" home-server
+body=$(curl -s -H "$IP" -H 'Connection: Upgrade' -H 'Upgrade: websocket' "$U/s/home-server/ws")
+check '"upgrade":"websocket"' home-server-ws; check '"connection":"upgrade"' home-server-ws
 loc=$(curl -s -o /dev/null -w '%{redirect_url}|%{http_code}' -H "$IP" "$U/s/truenas")
 case "$loc" in *"/api/hassio_ingress/TOKEN/s/truenas/|301") ok "s/<slug> -> s/<slug>/";; *) bad "slash redirect: $loc";; esac
 [ "$(code "$U/s/nope/")" = 404 ] && ok "unknown server 404" || bad "unknown server"
@@ -147,23 +147,23 @@ page=$(curl -s -H "$IP" "$U/")
 echo "$page" | grep -q '<ul id="servers"' && ok "2 servers: landing page served at /" || bad "landing page"
 echo "$page" | grep -qE "$KEY1|$KEY2|127\.0\.0\.1" && bad "landing page leaks" || ok "landing page has no keys or upstreams"
 # Set-Cookie Path=/ (password sign-in on a server whose key is not accepted) -> that server's own path.
-c1=$(curl -s -o /dev/null -D - -H "$IP" "$U/s/smol-boi/cookie" | grep -i '^set-cookie: jd_session=' | tr -d '\r')
+c1=$(curl -s -o /dev/null -D - -H "$IP" "$U/s/home-server/cookie" | grep -i '^set-cookie: jd_session=' | tr -d '\r')
 c2=$(curl -s -o /dev/null -D - -H "$IP" "$U/s/truenas/cookie" | grep -i '^set-cookie: jd_session=' | tr -d '\r')
-case "$c1" in *"jd_session=p$P1; Path=/api/hassio_ingress/TOKEN/s/smol-boi/; HttpOnly; SameSite=Strict") ok "smol-boi cookie scoped to its path";; *) bad "smol-boi cookie: $c1";; esac
+case "$c1" in *"jd_session=p$P1; Path=/api/hassio_ingress/TOKEN/s/home-server/; HttpOnly; SameSite=Strict") ok "home-server cookie scoped to its path";; *) bad "home-server cookie: $c1";; esac
 case "$c2" in *"jd_session=p$P2; Path=/api/hassio_ingress/TOKEN/s/truenas/; HttpOnly; SameSite=Strict") ok "truenas cookie scoped to its path";; *) bad "truenas cookie: $c2";; esac
 p1="${c1#*Path=}"; p2="${c2#*Path=}"
 [ -n "$c1" ] && [ "${p1%%;*}" != "${p2%%;*}" ] && ok "two servers' session cookies have distinct paths" || bad "cookie paths not distinct: $c1 / $c2"
 curl -s -o /dev/null -D - -H "$IP" "$U/s/truenas/cookie" | grep -qi '^set-cookie: jd_keep=1; Path=/already/scoped/' \
     && ok "non-root cookie path left unchanged" || bad "non-root cookie path changed"
 sj=$(curl -s -D "$work/h" "$U/servers.json")
-[ "$sj" = '[{"name":"smol-boi","slug":"smol-boi","path":"s/smol-boi/"},{"name":"TrueNAS","slug":"truenas","path":"s/truenas/"}]' ] \
+[ "$sj" = '[{"name":"home-server","slug":"home-server","path":"s/home-server/"},{"name":"TrueNAS","slug":"truenas","path":"s/truenas/"}]' ] \
     && ok "GET servers.json" || bad "GET servers.json: $sj"
 grep -qi 'content-type: application/json' "$work/h" && ok "servers.json is application/json" || bad "servers.json type"
 stop
 
 start "$(local_conf "$work/one-out/nginx.conf")"
 loc=$(curl -s -o /dev/null -w '%{redirect_url}|%{http_code}' -H "$IP" "$U/")
-case "$loc" in *"/api/hassio_ingress/TOKEN/s/smol-boi/|302") ok "1 server: / redirects to s/smol-boi/";; *) bad "1 server redirect: $loc";; esac
+case "$loc" in *"/api/hassio_ingress/TOKEN/s/home-server/|302") ok "1 server: / redirects to s/home-server/";; *) bad "1 server redirect: $loc";; esac
 stop
 
 grep -qE "$KEY1|$KEY2" "$work/ngx.log" && bad "key in nginx log" || ok "key not in nginx log"
