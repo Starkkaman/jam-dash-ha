@@ -73,6 +73,9 @@ for want in 'location /s/smol-boi/' 'location /s/truenas/' 'X-Forwarded-Prefix "
             'Upgrade $http_upgrade' "set \$jd_upstream \"http://127.0.0.1:$P1\";"; do
     grep -qF "$want" "$o/servers.conf" && ok "has: $want" || bad "missing: $want"
 done
+for s in smol-boi truenas; do
+    grep -qF "proxy_cookie_path ~^/\$ \"\$http_x_ingress_path/s/$s/\";" "$o/servers.conf" && ok "cookie path rewrite for $s" || bad "no cookie path rewrite for $s"
+done
 sed -n '/log_format/,/;/p' "$conf" | grep -qi 'jam_dash_proxy' && bad "log_format logs the key header" || ok "log_format has no key header"
 
 # 4. One server: root redirects; legacy options become one server "Jam-Dash".
@@ -105,6 +108,7 @@ fi
 for p in $P1 $P2; do
     node -e '
     require("http").createServer((q,s)=>{s.setHeader("content-type","application/json");
+     if(q.url.startsWith("/cookie"))s.setHeader("set-cookie",["jd_session=p"+process.argv[1]+"; Path=/; HttpOnly; SameSite=Strict","jd_keep=1; Path=/already/scoped/"]);
      s.end(JSON.stringify({port:+process.argv[1],url:q.url,h:q.headers}))}).listen(+process.argv[1],"127.0.0.1");' "$p" &
     up_pids="$up_pids $!"
 done
@@ -142,6 +146,15 @@ case "$loc" in *"/api/hassio_ingress/TOKEN/s/truenas/|301") ok "s/<slug> -> s/<s
 page=$(curl -s -H "$IP" "$U/")
 echo "$page" | grep -q '<ul id="servers"' && ok "2 servers: landing page served at /" || bad "landing page"
 echo "$page" | grep -qE "$KEY1|$KEY2|127\.0\.0\.1" && bad "landing page leaks" || ok "landing page has no keys or upstreams"
+# Set-Cookie Path=/ (password sign-in on a server whose key is not accepted) -> that server's own path.
+c1=$(curl -s -o /dev/null -D - -H "$IP" "$U/s/smol-boi/cookie" | grep -i '^set-cookie: jd_session=' | tr -d '\r')
+c2=$(curl -s -o /dev/null -D - -H "$IP" "$U/s/truenas/cookie" | grep -i '^set-cookie: jd_session=' | tr -d '\r')
+case "$c1" in *"jd_session=p$P1; Path=/api/hassio_ingress/TOKEN/s/smol-boi/; HttpOnly; SameSite=Strict") ok "smol-boi cookie scoped to its path";; *) bad "smol-boi cookie: $c1";; esac
+case "$c2" in *"jd_session=p$P2; Path=/api/hassio_ingress/TOKEN/s/truenas/; HttpOnly; SameSite=Strict") ok "truenas cookie scoped to its path";; *) bad "truenas cookie: $c2";; esac
+p1="${c1#*Path=}"; p2="${c2#*Path=}"
+[ -n "$c1" ] && [ "${p1%%;*}" != "${p2%%;*}" ] && ok "two servers' session cookies have distinct paths" || bad "cookie paths not distinct: $c1 / $c2"
+curl -s -o /dev/null -D - -H "$IP" "$U/s/truenas/cookie" | grep -qi '^set-cookie: jd_keep=1; Path=/already/scoped/' \
+    && ok "non-root cookie path left unchanged" || bad "non-root cookie path changed"
 sj=$(curl -s -D "$work/h" "$U/servers.json")
 [ "$sj" = '[{"name":"smol-boi","slug":"smol-boi","path":"s/smol-boi/"},{"name":"TrueNAS","slug":"truenas","path":"s/truenas/"}]' ] \
     && ok "GET servers.json" || bad "GET servers.json: $sj"

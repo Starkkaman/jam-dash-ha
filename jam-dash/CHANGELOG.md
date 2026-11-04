@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Session cookies are now kept per server. When a server signs you in with its own Jam-Dash password
+  (its key is not accepted, or Home Assistant access is off there), the cookie it sets for `/` is
+  scoped to that server's `s/<slug>/` path, so two such servers no longer sign each other out.
+  Cookie names are unchanged; cookies with any other path are left as they are.
+
 ## 0.2.0
 
 - Several Jam-Dash servers in one add-on: new `servers` option (name, url, proxy_key per server),

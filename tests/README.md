@@ -21,7 +21,8 @@ It renders the nginx config with sample options through the add-on's own `jam-da
   echo the request headers, checks that a non-Supervisor client gets 403, and (with 127.0.0.1 standing in
   for the Supervisor) that `s/<slug>/` is stripped and routed to the right server with its own key,
   `X-Forwarded-Prefix` = ingress path + `/s/<slug>`, `X-Remote-User-*`, `Host`, `X-Forwarded-Proto` and
-  WebSocket upgrade headers, that a client-sent key is replaced, the `s/<slug>` slash redirect, the
+  WebSocket upgrade headers, that a client-sent key is replaced, that `Set-Cookie` with `Path=/` comes back
+  scoped to each server's own ingress path (two servers, distinct paths; other paths untouched), the `s/<slug>` slash redirect, the
   landing page and `servers.json` over HTTP, and the one-server redirect.
 
 Without nginx it prints a NOTE and does only the static checks. `run.sh` (bashio) itself only runs

@@ -85,6 +85,11 @@ with that server's proxy key. Jam-Dash signs the request in as that Home Assista
 - **Amber dot / Jam-Dash asks for its password inside Home Assistant.** That server's key does not match (copied wrong, or a
   new key was made since) or Home Assistant access is off in Jam-Dash. Make a new key and paste it again,
   then restart the add-on.
+- **Two servers keep signing each other out (each asks for its password again).** Up to 0.2.0, a
+  server signed in with its own Jam-Dash password set its session cookie for the whole Home Assistant
+  address, so the next such server replaced it. From 0.2.1 the add-on keeps each server's cookie under
+  that server's `s/<slug>/` path. After updating, sign in to each server once more. Better still, fix
+  the key (see above) so no password is needed.
 - **Pages load but look broken, or live updates do not appear.** Your Jam-Dash version must support
   running under a path prefix; update Jam-Dash.
 - **Large downloads or uploads stop.** The add-on does not limit size and allows transfers up to an hour

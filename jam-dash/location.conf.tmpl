@@ -17,6 +17,10 @@
             proxy_set_header X-Remote-User-Id $http_x_remote_user_id;
             proxy_set_header X-Remote-User-Name $http_x_remote_user_name;
             proxy_set_header X-Remote-User-Display-Name $http_x_remote_user_display_name;
+            # Cookies a server sets for the whole origin (Path=/, e.g. a password sign-in when its
+            # key is not accepted) are scoped to this server, so two servers cannot overwrite each
+            # other's session cookie on the Home Assistant origin. Names are left unchanged.
+            proxy_cookie_path ~^/$ "$http_x_ingress_path/s/@SLUG@/";
             # Sets X-Jam-Dash-Proxy for this server (replacing anything a client sent).
             include @KEY_FILE@;
         }
