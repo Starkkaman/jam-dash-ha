@@ -1,0 +1,11 @@
+configuration:
+  url:
+    name: Jam-Dash address
+    description: >-
+      Where Jam-Dash runs on your network, with scheme and port only
+      (no path), for example http://192.168.1.20:8484 or http://jam-dash.local:8484.
+  proxy_key:
+    name: Proxy key
+    description: >-
+      The key shown once in Jam-Dash under Settings › Home Assistant access.
+      Jam-Dash only trusts the Home Assistant sign-in when this key matches.
