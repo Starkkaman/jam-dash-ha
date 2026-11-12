@@ -1,5 +1,5 @@
 name: Jam-Dash
-version: "0.2.1"
+version: "0.2.2"
 slug: jam_dash
 description: Open your Jam-Dash home-server dashboards inside Home Assistant.
 url: https://github.com/Starkkaman/jam-dash-ha

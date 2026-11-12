@@ -45,7 +45,9 @@ while IFS="$US" read -r name url key; do
     url="${url%/}"
     echo "$url" | grep -Eq '^https?://[A-Za-z0-9._~-]+(:[0-9]{1,5})?$|^https?://\[[0-9A-Fa-f:.]+\](:[0-9]{1,5})?$' \
         || fail "Option 'url' of $label must be scheme://host[:port] with no path, e.g. http://jam-dash.local:8484"
-    echo "$key" | grep -Eq '^[A-Za-z0-9._~+/=-]{16,512}$' \
+    # Length checked apart from the pattern: Alpine's (musl) regex refuses repeat counts over 255.
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    { [ "${#key}" -ge 16 ] && [ "${#key}" -le 512 ] && printf '%s' "$key" | grep -Eq '^[A-Za-z0-9._~+/=-]+$'; } \
         || fail "Option 'proxy_key' of $label does not look like a Jam-Dash key (copy it again from that Jam-Dash)."
 
     base="$(slugify "$name")"; [ -n "$base" ] || base="server"

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Fix: every proxy key was rejected as "does not look like a Jam-Dash key" on the add-on's Alpine base,
+  whose regex refuses repeat counts over 255. Spaces or line breaks pasted around a key are now ignored.
+
 ## 0.2.1
 
 - Session cookies are now kept per server. When a server signs you in with its own Jam-Dash password
